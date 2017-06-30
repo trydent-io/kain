@@ -1,2 +1,2 @@
-# kickstart-base
-Kickstart Base for new Jooby Kickstarts
+# Jooby Kickstart
+Base project for new Jooby Kickstarts
