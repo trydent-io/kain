@@ -1,0 +1,23 @@
+before_install:
+ - wget https://archive.apache.org/dist/maven/maven-3/3.5.0/binaries/apache-maven-3.5.0-bin.zip
+ - unzip -qq apache-maven-3.5.0-bin.zip
+ - export M2_HOME=$PWD/apache-maven-3.5.0
+ - export PATH=$M2_HOME/bin:$PATH
+
+sudo: false
+addons:
+  apt:
+    packages:
+      - oracle-java8-installer
+
+language: java
+jdk:
+  - oraclejdk8
+install:
+  - sh -c 'mvn install -DskipTests=true'
+script:
+  - mvn -Dlogback.configurationFile=logback.xml -Dcoverage.port=random -Dcoverage.securePort=random clean package cobertura:cobertura coveralls:report -P coverage
+
+branches:
+  only:
+    - master
