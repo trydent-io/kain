@@ -201,16 +201,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.jooby.kickstart;
+package org.jooby.kickstart
 
-import org.jooby.Jooby;
+import org.jooby.Kooby
+import org.jooby.run
 
-public class App extends Jooby {
-  {
-    get("/", () -> "Hello World!");
-  }
+class App: Kooby({
+  get("/") { -> "Hello World!" }
+})
 
-  public static void main(String... args) {
-    run(App.class, args);
-  }
-}
+fun main(args: Array<String>) = run(::App, *args)
+
+
