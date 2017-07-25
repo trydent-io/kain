@@ -1,4 +1,4 @@
-package org.jooby.kickstart
+package srl.paros.kain
 
 import com.mashape.unirest.http.Unirest
 import org.jooby.test.JoobyRule
