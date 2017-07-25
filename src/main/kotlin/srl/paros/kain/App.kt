@@ -211,13 +211,6 @@ import org.jooby.run
 import org.jooby.value
 import org.slf4j.LoggerFactory
 
-data class Block(
-  val index: Int,
-  val prevHash: String,
-  val timestamp: Long,
-  val data: Any,
-  val hash: String
-)
 
 data class Message(
   val type: MessageType,
@@ -230,33 +223,35 @@ enum class MessageType {
   ResponseBlockchain
 }
 
-private val GenesisBlock = lazy { Block(0, "0", 1465154705, "my genesis block!!", "816534932c2b7154836da6afc367695e6337db8a921823784c14378abed4f7d7") }
-
-private val Blockchain = listOf(GenesisBlock)
-
 val log = LoggerFactory.getLogger(App::class.java)
 
 private fun Mutant.asMessage() = this.to(Message::class.java)
 
-private fun nextBlock()
+private val blockchain = InMemoryBlockchain()
 
 class App : Kooby({
   use(Gzon())
 
-  use("blocks")
-    .get("chain") { -> Blockchain }
-    .post("mine") { req, _ ->
-      val block = nextBlock(req.body().value)
+  onStart {
+
+  }
+
+  use("/blocks")
+    .get("/chain") { -> arrayListOf(blockchain) }
+    .post("/mine") { req, _ ->
+      req.body().value
       add(block)
       broadcast(responseLastMessage())
       log.info("Added Block ${block}")
     }
 
-  use("peers")
-    .get("all") { -> mapOf("cioa" to "ciao", "ciao" to "ciao") }
-    .get("add") { req, _ -> connectTo(req.body().value) }
+  use("/peers")
+    .get("/all") { -> mapOf("cioa" to "ciao", "ciao" to "ciao") }
+    .get("/add") { req, _ -> connectTo(req.body().value) }
 
-  ws("p2p") { ws ->
+  ws("/ledge") { ws ->
+
+
     ws.onMessage { data ->
       data.asMessage()?.let {
         when (it.type) {
