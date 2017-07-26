@@ -210,24 +210,16 @@ import org.jooby.json.Gzon
 import org.jooby.run
 import org.jooby.value
 import org.slf4j.LoggerFactory
+import srl.paros.kain.Message.Type.*
+import java.awt.TrayIcon
+import javax.sql.DataSource
 
-
-data class Message(
-  val type: MessageType,
-  val block: Block
-)
-
-enum class MessageType {
-  QueryLatest,
-  QueryAll,
-  ResponseBlockchain
-}
 
 val log = LoggerFactory.getLogger(App::class.java)
 
 private fun Mutant.asMessage() = this.to(Message::class.java)
 
-private val blockchain = InMemoryBlockchain()
+private val blockchain = inMemoryBlockchain()
 
 class App : Kooby({
   use(Gzon())
@@ -237,12 +229,11 @@ class App : Kooby({
   }
 
   use("/blocks")
-    .get("/chain") { -> arrayListOf(blockchain) }
+    .get("/chain") { -> listOf(blockchain) }
     .post("/mine") { req, _ ->
-      req.body().value
-      add(block)
-      broadcast(responseLastMessage())
-      log.info("Added Block ${block}")
+      blockchain.add(req.body().value)
+//      broadcast(responseLastMessage())
+      log.info("Added Block ${req.body().value}")
     }
 
   use("/peers")
@@ -253,11 +244,11 @@ class App : Kooby({
 
 
     ws.onMessage { data ->
-      data.asMessage()?.let {
-        when (it.type) {
-          MessageType.QueryAll -> ws.send(responseChainMessage())
-          MessageType.QueryLatest -> ws.send(responseLatestMessage())
-          MessageType.ResponseBlockchain -> ws.send(handleBlockchainResponse(it))
+      data.asMessage().let {
+        when {
+          it.isFor(QueryAll) -> ws.send(queryAllMessage(blockchain.toString()))
+          it.isFor(QueryLast) -> ws.send(queryLastMessage(blockchain.last().hash()))
+          it.isFor(QueryChain) -> ws.send(handleBlockchainResponse(it))
         }
       }
     }
@@ -275,4 +266,14 @@ class App : Kooby({
 
 fun main(args: Array<String>) = run(::App, *args)
 
+/*
+peer-to-peer: rete distri
+ */
 
+class Person(val codiceFIscale: String, val dataSource: DataSource) {
+   fun fullName(): String {}
+}
+
+class Persons(val dataSource: DataSource) {
+  fun all(): Array<Person> {}
+}
