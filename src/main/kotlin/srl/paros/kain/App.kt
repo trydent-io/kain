@@ -210,8 +210,9 @@ import org.jooby.json.Gzon
 import org.jooby.run
 import org.jooby.value
 import org.slf4j.LoggerFactory
-import srl.paros.kain.Message.Type.*
-import java.awt.TrayIcon
+import srl.paros.kain.Message.Type.QueryAll
+import srl.paros.kain.Message.Type.QueryChain
+import srl.paros.kain.Message.Type.QueryLast
 import javax.sql.DataSource
 
 
@@ -219,14 +220,10 @@ val log = LoggerFactory.getLogger(App::class.java)
 
 private fun Mutant.asMessage() = this.to(Message::class.java)
 
-private val blockchain = inMemoryBlockchain()
-
 class App : Kooby({
   use(Gzon())
 
-  onStart {
-
-  }
+  val blockchain = inMemoryBlockchain()
 
   use("/blocks")
     .get("/chain") { -> listOf(blockchain) }
@@ -240,10 +237,10 @@ class App : Kooby({
     .get("/all") { -> mapOf("cioa" to "ciao", "ciao" to "ciao") }
     .get("/add") { req, _ -> connectTo(req.body().value) }
 
-  ws("/ledge") { ws ->
-
+  ws("/blockchain") { ws ->
 
     ws.onMessage { data ->
+
       data.asMessage().let {
         when {
           it.isFor(QueryAll) -> ws.send(queryAllMessage(blockchain.toString()))
@@ -271,7 +268,7 @@ peer-to-peer: rete distri
  */
 
 class Person(val codiceFIscale: String, val dataSource: DataSource) {
-   fun fullName(): String {}
+  fun fullName(): String {}
 }
 
 class Persons(val dataSource: DataSource) {

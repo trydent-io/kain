@@ -4,6 +4,8 @@ import srl.paros.kain.Message.Type.QueryAll
 import srl.paros.kain.Message.Type.QueryChain
 import srl.paros.kain.Message.Type.QueryLast
 
+data class BlockchainQuery()
+
 interface Message {
   enum class Type { QueryAll, QueryLast, QueryChain }
 
