@@ -224,11 +224,15 @@ class App : Kooby({
   use(Gzon())
 
   val blockchain = inMemoryBlockchain()
+  val commands = commands()
+
+  ws("/bs") { ws -> commands.with(ws) }
 
   use("/blocks")
     .get("/chain") { -> listOf(blockchain) }
     .post("/mine") { req, _ ->
       blockchain.add(req.body().value)
+      commands.push(SendBlock(blockchain.last()))
 //      broadcast(responseLastMessage())
       log.info("Added Block ${req.body().value}")
     }
@@ -239,13 +243,15 @@ class App : Kooby({
 
   ws("/blockchain") { ws ->
 
+    commands.on(SendBlock::class, )
+
     ws.onMessage { data ->
 
       data.asMessage().let {
         when {
           it.isFor(QueryAll) -> ws.send(queryAllMessage(blockchain.toString()))
           it.isFor(QueryLast) -> ws.send(queryLastMessage(blockchain.last().hash()))
-          it.isFor(QueryChain) -> ws.send(handleBlockchainResponse(it))
+          it.isFor(QueryChain) -> ws.send(blockchain)
         }
       }
     }
