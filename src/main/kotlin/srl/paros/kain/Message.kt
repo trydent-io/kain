@@ -1,24 +1,47 @@
 package srl.paros.kain
 
-import srl.paros.kain.Message.Type.QueryAll
-import srl.paros.kain.Message.Type.QueryChain
-import srl.paros.kain.Message.Type.QueryLast
+import org.jooby.Response
+import org.jooby.WebSocket
+import srl.paros.kain.Demand.Type.Full
+import srl.paros.kain.Demand.Type.Last
+import srl.paros.kain.blockchain.Block
+import srl.paros.kain.blockchain.ChainedBlocks
+import srl.paros.kain.blockchain.ReadonlyBlockchain
 
-data class BlockchainQuery()
+interface Demand {
+  enum class Type { Last, Full }
 
-interface Message {
-  enum class Type { QueryAll, QueryLast, QueryChain }
-
-  fun isFor(type: Type): Boolean
+  fun needs(o: Type): Boolean
 }
 
-private class PeerMessage(
-  private val data: String,
-  private val type: Message.Type
-) : Message {
-  override fun isFor(type: Message.Type): Boolean = this.type == type
+interface Yield {
+  enum class Type { Merge }
+
+  val blockchain: ChainedBlocks
+
+  fun gives(o: Type): Boolean
+  fun with(ws: WebSocket): Unit = ws.send(this)
+  fun sendWith(res: Response): Unit = res.send(this)
 }
 
-fun queryAllMessage(data: String): Message = PeerMessage(data, QueryAll)
-fun queryLastMessage(data: String): Message = PeerMessage(data, QueryLast)
-fun queryChainMessage(data: String): Message = PeerMessage(data, QueryChain)
+private class PeerDemand(type: Demand.Type, payload: Any): Demand {
+  private val operation = type
+  private val payload = payload
+
+  override fun needs(o: Demand.Type) = operation == o
+}
+
+private class PeerYield(type: Yield.Type, blocks: Array<Block>): Yield {
+  private val operation = type
+  private val blocks = blocks
+
+  override val blockchain get() = ReadonlyBlockchain(*blocks)
+
+  override fun gives(o: Yield.Type) = operation == o
+}
+
+fun DemandFull(): Demand = PeerDemand(Full, "Nothing")
+fun DemandLast(): Demand = PeerDemand(Last, "Nothing")
+
+fun YieldLast(blockchain: ChainedBlocks): Yield = PeerYield(Yield.Type.Merge, arrayOf(blockchain.last))
+fun YieldFull(blockchain: ChainedBlocks): Yield = PeerYield(Yield.Type.Merge, blockchain.toList().toTypedArray())

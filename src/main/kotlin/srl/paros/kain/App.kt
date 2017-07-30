@@ -208,50 +208,48 @@ import org.jooby.Mutant
 import org.jooby.WebSocket.PROTOCOL_ERROR
 import org.jooby.json.Gzon
 import org.jooby.run
+import org.jooby.toOptional
 import org.jooby.value
 import org.slf4j.LoggerFactory
-import srl.paros.kain.Message.Type.QueryAll
-import srl.paros.kain.Message.Type.QueryChain
-import srl.paros.kain.Message.Type.QueryLast
+import srl.paros.kain.Demand.Type.Merge
+import srl.paros.kain.Demand.Type.Full
+import srl.paros.kain.Demand.Type.Last
+import srl.paros.kain.Yield.Type.*
+import srl.paros.kain.blockchain.InMemoryBlockchain
+import srl.paros.kain.blockchain.block
+import srl.paros.kain.blockchain.tryEnquiry
+import srl.paros.kain.blockchain.tryLatest
+import srl.paros.kain.blockchain.tryRefill
 import javax.sql.DataSource
 
 
 val log = LoggerFactory.getLogger(App::class.java)
 
-private fun Mutant.asMessage() = this.to(Message::class.java)
+private fun Mutant.asDemand() = this.toOptional(Demand::class)
+private fun Mutant.asYield() = this.toOptional(Yield::class)
 
 class App : Kooby({
   use(Gzon())
 
-  val blockchain = inMemoryBlockchain()
-  val commands = commands()
+  val blockchain = InMemoryBlockchain()
 
-  ws("/bs") { ws -> commands.with(ws) }
+  ws("/p2p") { ws ->
 
-  use("/blocks")
-    .get("/chain") { -> listOf(blockchain) }
-    .post("/mine") { req, _ ->
-      blockchain.add(req.body().value)
-      commands.push(SendBlock(blockchain.last()))
-//      broadcast(responseLastMessage())
-      log.info("Added Block ${req.body().value}")
-    }
-
-  use("/peers")
-    .get("/all") { -> mapOf("cioa" to "ciao", "ciao" to "ciao") }
-    .get("/add") { req, _ -> connectTo(req.body().value) }
-
-  ws("/blockchain") { ws ->
-
-    commands.on(SendBlock::class, )
-
-    ws.onMessage { data ->
-
-      data.asMessage().let {
+    ws.onMessage { message ->
+      message.asDemand().ifPresent {
         when {
-          it.isFor(QueryAll) -> ws.send(queryAllMessage(blockchain.toString()))
-          it.isFor(QueryLast) -> ws.send(queryLastMessage(blockchain.last().hash()))
-          it.isFor(QueryChain) -> ws.send(blockchain)
+          it.needs(Last) -> YieldLast(blockchain).with(ws)
+          it.needs(Full) -> YieldFull(blockchain).with(ws)
+        }
+      }
+
+      message.asYield().ifPresent {
+        when {
+          it.gives(Merge) -> {
+            tryLatest(blockchain, it.blockchain)
+            tryEnquiry(blockchain, it.blockchain)
+            tryRefill(blockchain, it.blockchain)
+          }
         }
       }
     }
@@ -264,19 +262,16 @@ class App : Kooby({
     ws.onClose {
       log.info("Closed by term: ${it.reason()}")
     }
+
   }
+
+  use("/blockchain")
+    .get { -> blockchain.toList() }
+    .post("/mine") { req, _ -> blockchain.mine(req.body().value()) }
+
+  use("/peers")
+    .get { -> mapOf("cioa" to "ciao", "ciao" to "ciao") }
+    .post("/add") { req, _ -> connectTo(req.body().value) }
 })
 
 fun main(args: Array<String>) = run(::App, *args)
-
-/*
-peer-to-peer: rete distri
- */
-
-class Person(val codiceFIscale: String, val dataSource: DataSource) {
-  fun fullName(): String {}
-}
-
-class Persons(val dataSource: DataSource) {
-  fun all(): Array<Person> {}
-}
