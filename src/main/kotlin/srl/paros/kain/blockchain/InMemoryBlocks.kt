@@ -1,6 +1,6 @@
 package srl.paros.kain.blockchain
 
-internal class InMemoryBlocks(private var blocks: Array<Block>) : StackedBlocks {
+internal class InMemoryBlocks(private var blocks: Array<Block>) : MinedBlocks {
 
   override val last get() = blocks.last()
 

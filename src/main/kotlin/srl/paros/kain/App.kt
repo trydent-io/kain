@@ -215,12 +215,10 @@ import srl.paros.kain.Demand.Type.Merge
 import srl.paros.kain.Demand.Type.Full
 import srl.paros.kain.Demand.Type.Last
 import srl.paros.kain.Yield.Type.*
-import srl.paros.kain.blockchain.InMemoryBlockchain
-import srl.paros.kain.blockchain.block
+import srl.paros.kain.blockchain.Blockchain
 import srl.paros.kain.blockchain.tryEnquiry
 import srl.paros.kain.blockchain.tryLatest
 import srl.paros.kain.blockchain.tryRefill
-import javax.sql.DataSource
 
 
 val log = LoggerFactory.getLogger(App::class.java)
@@ -231,7 +229,7 @@ private fun Mutant.asYield() = this.toOptional(Yield::class)
 class App : Kooby({
   use(Gzon())
 
-  val blockchain = InMemoryBlockchain()
+  val blockchain = Blockchain()
 
   ws("/p2p") { ws ->
 
@@ -265,7 +263,7 @@ class App : Kooby({
 
   }
 
-  use("/blockchain")
+  use("/Blockchain")
     .get { -> blockchain.toList() }
     .post("/mine") { req, _ -> blockchain.mine(req.body().value()) }
 

@@ -60,8 +60,8 @@ private class Base64Block(uuid: String, mills: Long, link: String, message: Stri
   ))
 }
 
-val GENESIS: Block = block("0", KAIN_QUOTE)
-fun block(link: String, message: String): Block = Base64Block(
+val GENESIS: Block = Block("0", KAIN_QUOTE)
+fun Block(link: String, message: String): Block = Base64Block(
   uuid = uuid(),
   mills = now().asMills(),
   link = link,

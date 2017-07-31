@@ -5,7 +5,7 @@ import org.jooby.WebSocket
 import srl.paros.kain.Demand.Type.Full
 import srl.paros.kain.Demand.Type.Last
 import srl.paros.kain.blockchain.Block
-import srl.paros.kain.blockchain.ChainedBlocks
+import srl.paros.kain.blockchain.Blocks
 import srl.paros.kain.blockchain.ReadonlyBlockchain
 
 interface Demand {
@@ -17,7 +17,7 @@ interface Demand {
 interface Yield {
   enum class Type { Merge }
 
-  val blockchain: ChainedBlocks
+  val blockchain: Blocks
 
   fun gives(o: Type): Boolean
   fun with(ws: WebSocket): Unit = ws.send(this)
@@ -43,5 +43,5 @@ private class PeerYield(type: Yield.Type, blocks: Array<Block>): Yield {
 fun DemandFull(): Demand = PeerDemand(Full, "Nothing")
 fun DemandLast(): Demand = PeerDemand(Last, "Nothing")
 
-fun YieldLast(blockchain: ChainedBlocks): Yield = PeerYield(Yield.Type.Merge, arrayOf(blockchain.last))
-fun YieldFull(blockchain: ChainedBlocks): Yield = PeerYield(Yield.Type.Merge, blockchain.toList().toTypedArray())
+fun YieldLast(blockchain: Blocks): Yield = PeerYield(Yield.Type.Merge, arrayOf(blockchain.last))
+fun YieldFull(blockchain: Blocks): Yield = PeerYield(Yield.Type.Merge, blockchain.toList().toTypedArray())
