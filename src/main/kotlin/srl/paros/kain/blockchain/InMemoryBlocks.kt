@@ -4,7 +4,7 @@ internal class InMemoryBlocks(private var blocks: Array<Block>) : MinedBlocks {
 
   override val last get() = blocks.last()
 
-  override fun push(block: Block): StackedBlocks {
+  override fun push(block: Block): Blockchain {
     synchronized(blocks) {
       blocks = arrayOf(*blocks, block)
     }
@@ -17,7 +17,7 @@ internal class InMemoryBlocks(private var blocks: Array<Block>) : MinedBlocks {
 
   override fun iterator() = blocks.sortedBy { it.hash.value }.iterator()
 
-  override fun refill(vararg blocks: Block): StackedBlocks {
+  override fun refill(vararg blocks: Block): Blockchain {
     synchronized(this.blocks) {
       this.blocks = arrayOf(*blocks)
     }

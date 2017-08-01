@@ -36,17 +36,17 @@ interface Block {
   val hash: Hash
 }
 
-private class Base64Block(uuid: String, mills: Long, link: String, message: String) : Block {
+private class Base64Block(uuid: String, mills: Long, link: String, data: String) : Block {
   private val uuid = uuid
   private val mills = mills
   private val link = link
-  private val message = message
+  private val data = data
 
   override val id get() = Id(uuid)
 
   override val time: LocalDateTime get() = ofEpochSecond(mills, 0, UTC)
 
-  override val statement get() = Statement(message)
+  override val statement get() = Statement(data)
 
   override val prev get() = Hash(link)
 
@@ -55,15 +55,15 @@ private class Base64Block(uuid: String, mills: Long, link: String, message: Stri
       *uuid.toByteArray(),
       *mills.toString().toByteArray(),
       *link.toByteArray(),
-      *message.toByteArray()
+      *data.toByteArray()
     )
   ))
 }
 
-val GENESIS: Block = Block("0", KAIN_QUOTE)
-fun Block(link: String, message: String): Block = Base64Block(
+val GENESIS: Block = Block(Hash("0"), KAIN_QUOTE)
+fun Block(prev: Hash, data: String): Block = Base64Block(
   uuid = uuid(),
   mills = now().asMills(),
-  link = link,
-  message = message
+  link = prev.value,
+  data = data
 )
