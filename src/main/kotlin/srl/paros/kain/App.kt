@@ -215,7 +215,7 @@ import srl.paros.kain.Demand.Type.Merge
 import srl.paros.kain.Demand.Type.Full
 import srl.paros.kain.Demand.Type.Last
 import srl.paros.kain.Yield.Type.*
-import srl.paros.kain.blockchain.Blockchain
+import srl.paros.kain.blockchain.genesis
 import srl.paros.kain.blockchain.tryEnquiry
 import srl.paros.kain.blockchain.tryLatest
 import srl.paros.kain.blockchain.tryRefill
@@ -229,15 +229,18 @@ private fun Mutant.asYield() = this.toOptional(Yield::class)
 class App : Kooby({
   use(Gzon())
 
-  val blockchain = Blockchain()
+  val blockchain = genesis()
 
   ws("/p2p") { ws ->
 
-    ws.onMessage { message ->
+    ws.onMessage { message -> when (JsonDemand(message.value)) {
+      needs
+    }
+      message.value.takeIf { it.contains() }
       message.asDemand().ifPresent {
         when {
-          it.needs(Last) -> YieldLast(blockchain).with(ws)
-          it.needs(Full) -> YieldFull(blockchain).with(ws)
+          it.needs(Last) -> yieldLast(blockchain).with(ws)
+          it.needs(Full) -> yieldFull(blockchain).with(ws)
         }
       }
 
@@ -263,7 +266,7 @@ class App : Kooby({
 
   }
 
-  use("/Blockchain")
+  use("/genesis")
     .get { -> blockchain.toList() }
     .post("/mine") { req, _ -> blockchain.mine(req.body().value()) }
 

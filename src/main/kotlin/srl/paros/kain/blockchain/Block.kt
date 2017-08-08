@@ -36,7 +36,7 @@ interface Block {
   val hash: Hash
 }
 
-private class Base64Block(uuid: String, mills: Long, link: String, data: String) : Block {
+class HashedBlock(uuid: String, mills: Long, link: String, data: String) : Block {
   private val uuid = uuid
   private val mills = mills
   private val link = link
@@ -60,8 +60,8 @@ private class Base64Block(uuid: String, mills: Long, link: String, data: String)
   ))
 }
 
-val GENESIS: Block = Block(Hash("0"), KAIN_QUOTE)
-fun Block(prev: Hash, data: String): Block = Base64Block(
+val GENESIS: Block = block(Hash("0"), KAIN_QUOTE)
+fun block(prev: Hash, data: String): Block = HashedBlock(
   uuid = uuid(),
   mills = now().asMills(),
   link = prev.value,
