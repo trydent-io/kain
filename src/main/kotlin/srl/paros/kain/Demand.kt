@@ -1,21 +1,27 @@
 package srl.paros.kain
 
-import com.jayway.jsonpath.JsonPath
-import org.jooby.Response
+import com.jayway.jsonpath.DocumentContext
+import com.jayway.jsonpath.JsonPath.parse
 import org.jooby.WebSocket
-import srl.paros.kain.Demand.Type.Full
-import srl.paros.kain.Demand.Type.Last
-import srl.paros.kain.blockchain.Block
-import srl.paros.kain.blockchain.Blockchain
-import srl.paros.kain.blockchain.ReadonlyBlockchain
 
 interface Demand {
-  enum class Type(val value:String) { Full("full"), Last("last") }
+  enum class Type { Full, Last }
 
   fun yield(ws: WebSocket): Boolean
 }
 
-class JsonDemand(private val m: String) : Demand {
-  override fun yield(ws: WebSocket) = true
-}
+internal class JsonDemand(private val message: String) : Demand {
+  private val json: DocumentContext = parse(message)
 
+  override fun yield(ws: WebSocket): Boolean = json.read("$['demand']", List::class.java)
+    .takeIf { it.isNotEmpty() }
+    .let { it?.get(0).toString() }
+    .let { Demand.Type.valueOf(it) }
+    .let {
+      when (it) {
+        Demand.Type.Full -> ws.send("Blockchain").let { true }
+        Demand.Type.Last -> ws.send("Last").let { true }
+      }
+    }
+    .not()
+}

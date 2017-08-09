@@ -209,16 +209,17 @@ import org.jooby.WebSocket.PROTOCOL_ERROR
 import org.jooby.json.Gzon
 import org.jooby.run
 import org.jooby.toOptional
-import org.jooby.value
 import org.slf4j.LoggerFactory
 import srl.paros.kain.Demand.Type.Merge
 import srl.paros.kain.Demand.Type.Full
 import srl.paros.kain.Demand.Type.Last
 import srl.paros.kain.Yield.Type.*
+import srl.paros.kain.blockchain.GENESIS_CHAIN
 import srl.paros.kain.blockchain.genesis
 import srl.paros.kain.blockchain.tryEnquiry
 import srl.paros.kain.blockchain.tryLatest
 import srl.paros.kain.blockchain.tryRefill
+import java.util.concurrent.atomic.AtomicReference
 
 
 val log = LoggerFactory.getLogger(App::class.java)
@@ -229,13 +230,11 @@ private fun Mutant.asYield() = this.toOptional(Yield::class)
 class App : Kooby({
   use(Gzon())
 
-  val blockchain = genesis()
+  val blockchain = AtomicReference(GENESIS_CHAIN)
 
   ws("/p2p") { ws ->
 
-    ws.onMessage { message -> when (JsonDemand(message.value)) {
-      needs
-    }
+    ws.onMessage { message -> JsonDemand(message.value).yield(ws) }
       message.value.takeIf { it.contains() }
       message.asDemand().ifPresent {
         when {

@@ -17,16 +17,9 @@ private fun LocalDateTime.asMills() = this.toInstant(UTC).toEpochMilli()
 
 private val KAIN_QUOTE = "Suppose you throw a coin enough times... suppose one day, it lands on its edge"
 
-data class Id(val value: String) {
-  operator fun compareTo(id: Id): Int = when {
-    value < id.value -> -1
-    value == id.value -> 0
-    else -> 1
-  }
-}
-
-data class Hash(val value: String)
-data class Statement(val value: String)
+typealias Id = String
+typealias Hash = String
+typealias Statement = String
 
 interface Block {
   val id: Id
@@ -36,34 +29,49 @@ interface Block {
   val hash: Hash
 }
 
-class HashedBlock(uuid: String, mills: Long, link: String, data: String) : Block {
+internal class HashedBlock(uuid: String, mills: Long, link: String, data: String) : Block {
   private val uuid = uuid
   private val mills = mills
   private val link = link
   private val data = data
 
-  override val id get() = Id(uuid)
+  override val id get() = uuid
 
   override val time: LocalDateTime get() = ofEpochSecond(mills, 0, UTC)
 
-  override val statement get() = Statement(data)
+  override val statement get() = data
 
-  override val prev get() = Hash(link)
+  override val prev get() = link
 
-  override val hash get() = Hash(encode(
+  override val hash get() = encode(
     byteArrayOf(
       *uuid.toByteArray(),
       *mills.toString().toByteArray(),
       *link.toByteArray(),
       *data.toByteArray()
     )
-  ))
+  )
 }
 
-val GENESIS: Block = block(Hash("0"), KAIN_QUOTE)
-fun block(prev: Hash, data: String): Block = HashedBlock(
-  uuid = uuid(),
-  mills = now().asMills(),
-  link = prev.value,
-  data = data
-)
+internal class MinedBlock(prev: Hash, data: String) : Block {
+  private val block: Block = HashedBlock(
+    uuid = uuid(),
+    mills = now().asMills(),
+    link = prev,
+    data = data
+  )
+
+  override val id: Id get() = block.id
+
+  override val time: LocalDateTime get() = block.time
+
+  override val statement: Statement get() = block.statement
+
+  override val prev: Hash get() = block.prev
+
+  override val hash: Hash get() = block.hash
+}
+
+val GENESIS: Block = MinedBlock("0", KAIN_QUOTE)
+
+fun mineBlock(prev: Hash, data: String): Block = MinedBlock(prev, data)
