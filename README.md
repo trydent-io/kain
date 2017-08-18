@@ -1,2 +1,2 @@
-# Kooby Kickstart
-Base project for new Kooby Kickstarts
+# Kain a noob-blockchain
+Let's see
