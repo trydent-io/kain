@@ -15,8 +15,8 @@ interface Settings {
   fun rdbms(): Rdbms
 }
 
+// ma che capperi
 interface Cluster {
-
 }
 
 private fun Properties.url(): String = this.getProperty("db.url")
