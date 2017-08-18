@@ -203,75 +203,23 @@
  */
 package srl.paros.kain
 
-import org.jooby.Kooby
-import org.jooby.Mutant
-import org.jooby.WebSocket.PROTOCOL_ERROR
-import org.jooby.json.Gzon
-import org.jooby.run
-import org.jooby.toOptional
+import org.jgroups.JChannel
 import org.slf4j.LoggerFactory
-import srl.paros.kain.Demand.Type.Merge
-import srl.paros.kain.Demand.Type.Full
-import srl.paros.kain.Demand.Type.Last
-import srl.paros.kain.Yield.Type.*
-import srl.paros.kain.blockchain.GENESIS_CHAIN
-import srl.paros.kain.blockchain.genesis
-import srl.paros.kain.blockchain.tryEnquiry
-import srl.paros.kain.blockchain.tryLatest
-import srl.paros.kain.blockchain.tryRefill
-import java.util.concurrent.atomic.AtomicReference
+import spark.servlet.SparkApplication
 
 
 val log = LoggerFactory.getLogger(App::class.java)
 
-private fun Mutant.asDemand() = this.toOptional(Demand::class)
-private fun Mutant.asYield() = this.toOptional(Yield::class)
+class App(cluster: Cluster) : SparkApplication {
+  private val cluster = cluster
 
-class App : Kooby({
-  use(Gzon())
-
-  val blockchain = AtomicReference(GENESIS_CHAIN)
-
-  ws("/p2p") { ws ->
-
-    ws.onMessage { message -> JsonDemand(message.value).yield(ws) }
-      message.value.takeIf { it.contains() }
-      message.asDemand().ifPresent {
-        when {
-          it.needs(Last) -> yieldLast(blockchain).with(ws)
-          it.needs(Full) -> yieldFull(blockchain).with(ws)
-        }
-      }
-
-      message.asYield().ifPresent {
-        when {
-          it.gives(Merge) -> {
-            tryLatest(blockchain, it.blockchain)
-            tryEnquiry(blockchain, it.blockchain)
-            tryRefill(blockchain, it.blockchain)
-          }
-        }
-      }
-    }
-
-    ws.onError {
-      log.error("Closed by error: ${it.cause}")
-      ws.close(PROTOCOL_ERROR)
-    }
-
-    ws.onClose {
-      log.info("Closed by term: ${it.reason()}")
-    }
+  override fun init() {
 
   }
 
-  use("/genesis")
-    .get { -> blockchain.toList() }
-    .post("/mine") { req, _ -> blockchain.mine(req.body().value()) }
+  override fun destroy() = cluster.close()
+}
 
-  use("/peers")
-    .get { -> mapOf("cioa" to "ciao", "ciao" to "ciao") }
-    .post("/add") { req, _ -> connectTo(req.body().value) }
-})
-
-fun main(args: Array<String>) = run(::App, *args)
+fun main(args: Array<String>) {
+  App().init()
+}
