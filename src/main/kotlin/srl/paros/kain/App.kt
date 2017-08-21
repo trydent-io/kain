@@ -203,7 +203,6 @@
  */
 package srl.paros.kain
 
-import org.jgroups.JChannel
 import org.slf4j.LoggerFactory
 import spark.servlet.SparkApplication
 
@@ -216,10 +215,8 @@ class App(cluster: Cluster) : SparkApplication {
   override fun init() {
 
   }
-
-  override fun destroy() = cluster.close()
 }
 
 fun main(args: Array<String>) {
-  App().init()
+
 }
