@@ -218,5 +218,8 @@ class App(cluster: Cluster) : SparkApplication {
 }
 
 fun main(args: Array<String>) {
-
+  defaultSettings()
+    .dbConfig()
+    .datasource()
+    .database()
 }
