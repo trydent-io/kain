@@ -5,13 +5,13 @@ import java.util.*
 
 private const val SETTINGS = "application.properties"
 
+private fun applicationProperties() = Settings::class.java.getResourceAsStream("application.properties")
+
+fun named(v: String) = (v.takeIf { it.isNotBlank() }?.let { ".$it" } ?: "")
+
 interface Settings : Iterable<String> {
   fun xml(): String
   fun json(): String
-
-  fun serverConfig(server: String = ""): ServerConfiguration
-  fun clusterConfig(cluster: String = ""): ClusterConfiguration
-  fun dbConfig(database: String = ""): DbConfig
 }
 
 internal class PSettings(p: Properties) : Settings {
@@ -20,8 +20,6 @@ internal class PSettings(p: Properties) : Settings {
   override fun xml(): String = "<xml>$p</xml>"
 
   override fun json(): String = """{ json: "$p" }"""
-
-  private fun named(v: String): String = (v.takeIf { it.isNotBlank() }?.let { ".$it" } ?: "")
 
   override fun serverConfig(server: String): ServerConfiguration {
     TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -46,14 +44,17 @@ internal class PSettings(p: Properties) : Settings {
 }
 
 fun defaultSettings(): Settings = Properties().apply {
-  load(Settings::class.java.getResourceAsStream("application.properties"))
+  load(applicationProperties())
 }.let { PSettings(it) }
 
 fun settingsFrom(p: Properties): Settings = PSettings(p)
 
 interface DbConfig {
-  fun hikari(): HikariConfig
   fun datasource(): DbSource
+}
+
+interface HikariDbConfig {
+  fun hikari(): HikariConfig
 }
 
 interface ServerConfiguration {
