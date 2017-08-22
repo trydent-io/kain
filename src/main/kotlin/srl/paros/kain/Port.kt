@@ -4,6 +4,6 @@ interface Port {
   val value: Int
 }
 
-interface HttpPort : Port
+data class HttpPort(override val value: Int) : Port
 interface HttpsPort : Port
 interface ClusterPort : Port

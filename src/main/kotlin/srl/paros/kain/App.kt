@@ -205,9 +205,8 @@ package srl.paros.kain
 
 import org.slf4j.LoggerFactory
 import spark.servlet.SparkApplication
-import srl.paros.kain.db.HikariDbSettings
-import srl.paros.kain.db.HikariDbSettingsWith
-import java.util.*
+import srl.paros.kain.db.dbSettings
+import srl.paros.kain.db.rxDbSource
 
 
 val log = LoggerFactory.getLogger(App::class.java)
@@ -221,11 +220,9 @@ class App(cluster: Cluster) : SparkApplication {
 }
 
 fun main(args: Array<String>) {
-  HikariDbSettingsWith(Properties())
-    .dbSource("kain")
-
-  defaultSettings()
-    .dbConfig()
-    .datasource()
-    .database()
+  settings()
+    .let(::dbSettings)
+    .dbSource()
+    .let(::rxDbSource)
+    .databaseAsync()
 }

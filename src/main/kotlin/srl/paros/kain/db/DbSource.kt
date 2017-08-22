@@ -1,48 +1,32 @@
 package srl.paros.kain.db
 
-import srl.paros.kain.DbSource
-import java.io.PrintWriter
-import java.sql.Connection
-import java.util.logging.Logger
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import javax.sql.DataSource
 
-internal class DbSourceImpl(private val settings: DbSettings) : DbSource {
-  override fun dataSource(): DataSource = object : DataSource {
-    override fun setLogWriter(out: PrintWriter?) {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+typealias Transform<T> = (s: DbSource) -> T
 
-    override fun getParentLogger(): Logger {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun setLoginTimeout(seconds: Int) {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun isWrapperFor(iface: Class<*>?): Boolean {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getLogWriter(): PrintWriter {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun <T : Any?> unwrap(iface: Class<T>?): T {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getConnection(): Connection {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getConnection(username: String?, password: String?): Connection {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getLoginTimeout(): Int {
-      TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-  }
+interface DbSource {
+  fun dataSource(): DataSource
+  fun <D> to(t: Transform<D>): D where D : DbSource
 }
+
+internal class DbSourceImpl(
+  private val url: String,
+  private val usr: String,
+  private val pwd: String,
+  private val drv: String
+) : DbSource {
+  private fun hikari() = HikariConfig().apply {
+    jdbcUrl = url
+    username = usr
+    password = pwd
+    driverClassName = drv
+  }
+
+  override fun dataSource(): DataSource = HikariDataSource(hikari())
+
+  override fun <D : DbSource> to(t: Transform<D>): D = t(this)
+}
+
+fun dbSource(url: String, usr: String, pwd: String, drv: String): DbSource = DbSourceImpl(url, usr, pwd, drv)

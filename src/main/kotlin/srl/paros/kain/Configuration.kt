@@ -1,69 +1,29 @@
 package srl.paros.kain
 
-import com.zaxxer.hikari.HikariConfig
 import java.util.*
 
 private const val SETTINGS = "application.properties"
 
 private fun applicationProperties() = Settings::class.java.getResourceAsStream("application.properties")
 
-fun named(v: String) = (v.takeIf { it.isNotBlank() }?.let { ".$it" } ?: "")
-
-interface Settings : Iterable<String> {
-  fun xml(): String
-  fun json(): String
+data class Name(private val name: String) {
+  val value get() = name.takeIf { it.isNotBlank() }?.let { ".$it" } ?: ""
 }
 
-internal class PSettings(p: Properties) : Settings {
-  private val p = p
+typealias Setting = String
 
-  override fun xml(): String = "<xml>$p</xml>"
+interface Settings : Iterable<Setting> {
+  operator fun get(key: String): Setting?
+}
 
-  override fun json(): String = """{ json: "$p" }"""
+internal class SettingsImpl(private val p: Properties) : Settings {
+  override fun get(key: String): Setting? = p[key].toString()
 
-  override fun serverConfig(server: String): ServerConfiguration {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-  }
-
-  override fun clusterConfig(cluster: String): ClusterConfiguration {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-  }
-
-  override fun dbConfig(database: String): DbConfig = named(database).let {
-    dbConfig(
-      p.getProperty("db$it.url"),
-      p.getProperty("db$it.username"),
-      p.getProperty("db$it.password"),
-      p.getProperty("db$it.driver"))
-  }
-
-  override fun iterator(): Iterator<String> = p.propertyNames()
-    .toList()
-    .map { "property[$it] = ${p[it]}" }
+  override fun iterator(): Iterator<Setting> = p.propertyNames().toList()
+    .map { p[it] }
+    .map { it.toString() }
     .iterator()
 }
 
-fun defaultSettings(): Settings = Properties().apply {
-  load(applicationProperties())
-}.let { PSettings(it) }
-
-fun settingsFrom(p: Properties): Settings = PSettings(p)
-
-interface DbConfig {
-  fun datasource(): DbSource
-}
-
-interface HikariDbConfig {
-  fun hikari(): HikariConfig
-}
-
-interface ServerConfiguration {
-  fun httpServer(): HttpServer
-  fun httpPort(): HttpPort
-  fun httpsPort(): HttpsPort
-}
-
-interface ClusterConfiguration {
-  fun cluster(): Cluster
-  fun clusterPort(): ClusterPort
-}
+fun settings(): Settings = SettingsImpl(Properties().apply { load(applicationProperties()) })
+fun settingsWith(properties: Properties): Settings = SettingsImpl(properties)

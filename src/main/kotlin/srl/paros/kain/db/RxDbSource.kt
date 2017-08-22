@@ -1,10 +1,12 @@
 package srl.paros.kain.db
 
 import com.github.davidmoten.rx.jdbc.Database
-import srl.paros.kain.DbSource
-import srl.paros.kain.RxDbSource
-import java.util.*
 import javax.sql.DataSource
+
+interface RxDbSource : DbSource {
+  fun database(): Database
+  fun databaseAsync(): Database
+}
 
 internal class RxDbSourceImpl(private val dbSource: DbSource) : RxDbSource {
   override fun dataSource(): DataSource = dbSource.dataSource()
@@ -14,8 +16,5 @@ internal class RxDbSourceImpl(private val dbSource: DbSource) : RxDbSource {
   override fun databaseAsync(): Database = database().asynchronous()
 }
 
-fun RxDbSourceWith(properties: Properties): RxDbSource = RxDbSourceImpl(
-  HikariDbSource(
-    HikariDbSettingsWith(properties)
-  )
-)
+fun rxDbSource(dbSource: DbSource): RxDbSource = RxDbSourceImpl(dbSource)
+fun rxDbSource(url: String, usr: String, pwd: String, drv: String): RxDbSource = rxDbSource(dbSource(url, usr, pwd, drv))

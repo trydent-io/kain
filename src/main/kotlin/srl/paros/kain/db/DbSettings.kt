@@ -1,33 +1,32 @@
 package srl.paros.kain.db
 
-import srl.paros.kain.DbSource
+import srl.paros.kain.Name
+import srl.paros.kain.Setting
 import srl.paros.kain.Settings
-import srl.paros.kain.named
+import srl.paros.kain.settings
+import srl.paros.kain.settingsWith
 import java.util.*
 
 interface DbSettings : Settings {
-  fun dbSource(named: String = ""): DbSource
+  fun dbSource(name: Name = Name("")): DbSource
 }
 
-internal class PDbSettings(private val properties: Properties) : DbSettings {
-  override fun dbSource(name: String): DbSource {
-    val n = named(name)
-    return HikariDbSource(HikariDbSettingsWith(properties))
+internal class DbSettingsImpl(private val settings: Settings) : DbSettings {
+  override fun get(key: String): Setting? = settings[key]
+
+  override fun iterator(): Iterator<Setting> = settings.iterator()
+
+  override fun dbSource(name: Name): DbSource = name.value.let {
+    dbSource(
+      this["db$it.url"] ?: "localhost",
+      this["db$it.username"],
+      this["db$it.password"],
+      this["db$it.driver"]
+    )
   }
 
-  override fun xml(): String {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-  }
-
-  override fun json(): String {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-  }
-
-  override fun iterator(): Iterator<String> = properties
-    .propertyNames().toList()
-    .map { properties[it] }
-    .map { it.toString() }
-    .iterator()
 }
 
-fun DbSettingsWith(properties: Properties): DbSettings = PDbSettings(properties)
+fun dbSettings(): DbSettings = settings().let(::dbSettings)
+fun dbSettings(settings: Settings): DbSettings = DbSettingsImpl(settings)
+fun dbSettingsWith(properties: Properties): DbSettings = settingsWith(properties).let(::dbSettings)
