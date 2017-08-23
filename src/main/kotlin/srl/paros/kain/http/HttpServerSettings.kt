@@ -16,7 +16,7 @@ interface HttpServerSettings : Settings {
 private const val HS = "httpServer"
 
 internal class HttpServerSettingsImpl(private val settings: Settings) : HttpServerSettings {
-  override fun httpServer(name: Name): HttpServer = name.value
+  override fun httpServer(name: Name): HttpServer = name.property
     .let {
       httpServer(
         host(this["$HS$it.host"].toString()),

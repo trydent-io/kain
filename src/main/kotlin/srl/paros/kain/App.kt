@@ -220,9 +220,13 @@ class App(cluster: Cluster) : SparkApplication {
 }
 
 fun main(args: Array<String>) {
-  settings()
-    .let(::dbSettings)
+  val name = settings()
+    .convertIn(::dbSettings)
     .dbSource()
-    .let(::rxDbSource)
+    .convertIn(::rxDbSource)
     .databaseAsync()
+    .select("select nome from persone")
+    .getAs(String::class.java)
+    .toBlocking()
+    .first()
 }

@@ -8,7 +8,7 @@ typealias Transform<T> = (s: DbSource) -> T
 
 interface DbSource {
   fun dataSource(): DataSource
-  fun <D> to(t: Transform<D>): D where D : DbSource
+  fun <D> convertIn(t: Transform<D>): D where D : DbSource
 }
 
 internal class DbSourceImpl(
@@ -26,7 +26,7 @@ internal class DbSourceImpl(
 
   override fun dataSource(): DataSource = HikariDataSource(hikari())
 
-  override fun <D : DbSource> to(t: Transform<D>): D = t(this)
+  override fun <D : DbSource> convertIn(t: Transform<D>): D = t(this)
 }
 
 fun dbSource(url: String, usr: String, pwd: String, drv: String): DbSource = DbSourceImpl(url, usr, pwd, drv)

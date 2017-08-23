@@ -20,6 +20,6 @@ class BlockchainMerge(ws: WebSocket) : Merge {
 
     (r.last.id > o.last.id && r.size == 1) -> o.apply { ws.broadcast(demandFull()) }
 
-    else -> o.apply { log.warn("Nothing to do") }
+    else -> o.apply { log.warn("Nothing convertIn do") }
   }
 }

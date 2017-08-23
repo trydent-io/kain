@@ -14,6 +14,8 @@ internal class RxDbSourceImpl(private val dbSource: DbSource) : RxDbSource {
   override fun database(): Database = Database.fromDataSource(dataSource())
 
   override fun databaseAsync(): Database = database().asynchronous()
+
+  override fun <D : DbSource> convertIn(t: Transform<D>): D = dbSource.convertIn(t)
 }
 
 fun rxDbSource(dbSource: DbSource): RxDbSource = RxDbSourceImpl(dbSource)
