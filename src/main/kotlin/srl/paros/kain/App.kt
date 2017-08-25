@@ -205,6 +205,7 @@ package srl.paros.kain
 
 import org.slf4j.LoggerFactory
 import spark.servlet.SparkApplication
+import srl.paros.kain.core.settings
 import srl.paros.kain.db.dbSettings
 import srl.paros.kain.db.rxDbSource
 
