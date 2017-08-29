@@ -4,7 +4,6 @@ import org.jooby.Response
 import org.jooby.WebSocket
 import srl.paros.kain.blockchain.Block
 import srl.paros.kain.blockchain.Blockchain
-import srl.paros.kain.blockchain.ReadonlyBlockchain
 
 interface Yield {
   enum class Type { Merge }
@@ -20,7 +19,7 @@ private class PeerYield(type: Yield.Type, blocks: Array<Block>) : Yield {
   private val operation = type
   private val blocks = blocks
 
-  override val blockchain get() = ReadonlyBlockchain(*blocks)
+  override val blockchain get() = Blockchain(*blocks)
 
   override fun gives(o: Yield.Type) = operation == o
 }

@@ -1,11 +1,13 @@
 package srl.paros.kain.blockchain
 
 import com.fasterxml.uuid.Generators.timeBasedGenerator
+import srl.paros.kain.db.RxDb
+import java.time.Instant
 import java.time.LocalDateTime
-import java.time.LocalDateTime.now
-import java.time.LocalDateTime.ofEpochSecond
+import java.time.ZoneId
 import java.time.ZoneOffset.UTC
-import java.util.*
+import java.util.Base64
+import java.util.UUID
 
 private val UUID = timeBasedGenerator()
 private val ENCODER: Base64.Encoder = Base64.getEncoder()
@@ -17,18 +19,47 @@ private fun LocalDateTime.asMills() = this.toInstant(UTC).toEpochMilli()
 
 private val KAIN_QUOTE = "Suppose you throw a coin enough times... suppose one day, it lands on its edge"
 
-typealias Id = String
-typealias Hash = String
-typealias Statement = String
+data class Statement internal constructor(val value: String)
+
+fun statement(v: String): Statement? = v
+  .takeIf { it.length in 1..255 }
+  ?.let(::Statement)
 
 interface Block {
-  val id: Id
+  val uuid: UUID
   val time: LocalDateTime
   val statement: Statement
-  val prev: Hash
-  val hash: Hash
 }
 
+private fun Long.asLocalDateTime(): LocalDateTime = Instant
+  .ofEpochMilli(this)
+  .atZone(ZoneId.systemDefault())
+  .toLocalDateTime()
+
+private fun String.asUUID(): UUID = java.util.UUID.fromString(this)
+
+internal class RawBlock(
+  private val value1: String,
+  private val value2: Long,
+  private val value3: String
+) : Block {
+  override val uuid: UUID get() = value1.asUUID()
+  override val time: LocalDateTime get() = value2.asLocalDateTime()
+  override val statement: Statement get() = statement(value3)!!
+}
+
+internal class DbBlock(private val db: RxDb, private val id: Long) : Block {
+  override val uuid: UUID
+    get() =
+      override
+  val time: LocalDateTime
+    get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+  override val statement: Statement
+    get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+
+}
+
+/*
 internal class HashedBlock(uuid: String, mills: Long, link: String, data: String) : Block {
   private val uuid = uuid
   private val mills = mills
@@ -75,3 +106,4 @@ internal class MinedBlock(prev: Hash, data: String) : Block {
 val GENESIS: Block = MinedBlock("0", KAIN_QUOTE)
 
 fun mineBlock(prev: Hash, data: String): Block = MinedBlock(prev, data)
+*/

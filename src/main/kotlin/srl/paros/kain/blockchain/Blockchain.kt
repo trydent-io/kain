@@ -1,23 +1,29 @@
 package srl.paros.kain.blockchain
 
-interface Blockchain : Iterable<Block> {
-  val last: Block
-  val size: Int get() = this.count()
+import srl.paros.kain.db.DbSession
+import java.util.UUID
 
-  fun mine(data: String) = push(mine(last.hash, data))
-  fun push(block: Block): Blockchain
+interface Blocks : Iterable<Block> {
+  fun push(block: Block): Blocks
+  fun pop(uuid: UUID)
 }
 
-internal class ReadonlyBlockchain(vararg blocks: Block) : Blockchain {
-  private val blocks: Array<Block> = arrayOf(*blocks)
+internal class DbBlocks(private val db: DbSession) : Blocks {
+  override fun pop(uuid: UUID) = db.jdbc()
+    .sql("delete from blocks where uuid = ?")
+    .set(uuid.toString())
+    .execute()
+    .commit()
 
-  override val last: Block get() = blocks.last()
+  override fun push(block: Block): Blocks {
+    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  }
 
-  override fun push(block: Block): Blockchain = ReadonlyBlockchain(*blocks, block)
-
-  override fun iterator(): Iterator<Block> = blocks.iterator()
+  override fun iterator(): Iterator<Block> = db.jdbc()
+    .sql("select uuid, timestamp, statement from blocks order by timestamp")
+    .select { rs, _ ->
+      val bs = mutableListOf<Block>()
+      while (rs.next()) bs.add(RawBlock(rs.getString(0), rs.getLong(1), rs.getString(2)))
+      bs.iterator()
+    }
 }
-
-val GENESIS_CHAIN: Blockchain = ReadonlyBlockchain(GENESIS)
-
-fun readonlyBlockchain(vararg blocks: Block): Blockchain = ReadonlyBlockchain(*blocks)
