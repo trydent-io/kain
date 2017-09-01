@@ -1,20 +1,14 @@
 package srl.paros.kain.db
 
-import com.jcabi.jdbc.JdbcSession
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import srl.paros.kain.api.Name
 import java.sql.Driver
 import java.util.Properties
-import java.util.concurrent.atomic.AtomicReference
 import javax.sql.DataSource
 
 interface Db {
-  fun open(url: String, usr: String = "", pwd: String = ""): DbSession
-}
-
-interface DbSession {
-  fun jdbc(): JdbcSession
+  fun open(url: String, usr: String = "", pwd: String = ""): DataSource
 }
 
 private const val JDBC_URL = "db%s.url"
@@ -27,26 +21,20 @@ private fun Properties.username(n: Name) = this[USERNAME.format(n.property)].toS
 private fun Properties.password(n: Name) = this[PASSWORD.format(n.property)].toString()
 private fun Properties.driver(n: Name) = this[DRIVER.format(n.property)].toString()
 
-internal class RawDb(urlPattern: String, driver: String) : Db {
+class RawDb(urlPattern: String, driver: String) : Db {
   private val urlPattern = urlPattern
   private val driver = driver
 
-  override fun open(url: String, usr: String, pwd: String): DbSession = HikariConfig().apply {
+  override fun open(url: String, usr: String, pwd: String): DataSource = HikariConfig().apply {
     jdbcUrl = urlPattern.format(url)
     driverClassName = driver
     username = usr
     password = pwd
-  }.let(::HikariSession)
+  }.let(::HikariDataSource)
 }
 
-internal class HikariSession(private val cfg: HikariConfig) : DbSession {
-  private val src: AtomicReference<DataSource> = AtomicReference()
-
-  override fun jdbc(): JdbcSession = src
-    .takeIf { it.compareAndSet(null, HikariDataSource(cfg)) }
-    ?.get()
-    ?.let { JdbcSession(it) }
-    ?: JdbcSession(src.get())
+enum class CachedDb(val db: Db) {
+  H2_FILE(h2InFile())
 }
 
 fun <T> db(urlPattern: String, driver: Class<T>): Db where T : Driver = RawDb(urlPattern, driver.name)

@@ -1,20 +1,22 @@
 package srl.paros.kain.blockchain
 
 import com.fasterxml.uuid.Generators.timeBasedGenerator
-import srl.paros.kain.db.RxDb
+import com.github.davidmoten.rx.jdbc.Database
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset.UTC
 import java.util.Base64
 import java.util.UUID
+import java.util.UUID.fromString
+import javax.sql.DataSource
 
-private val UUID = timeBasedGenerator()
+private val TIMED_UUID = timeBasedGenerator()
 private val ENCODER: Base64.Encoder = Base64.getEncoder()
 
 private fun encode(bytes: ByteArray) = ENCODER.encodeToString(bytes)
 
-private fun uuid() = UUID.generate().toString()
+private fun uuid() = TIMED_UUID.generate().toString()
 private fun LocalDateTime.asMills() = this.toInstant(UTC).toEpochMilli()
 
 private val KAIN_QUOTE = "Suppose you throw a coin enough times... suppose one day, it lands on its edge"
@@ -27,8 +29,9 @@ fun statement(v: String): Statement? = v
 
 interface Block {
   val uuid: UUID
-  val time: LocalDateTime
-  val statement: Statement
+  val locktime: LocalDateTime
+  val input: Statement
+  val output: Statement
 }
 
 private fun Long.asLocalDateTime(): LocalDateTime = Instant
@@ -36,27 +39,38 @@ private fun Long.asLocalDateTime(): LocalDateTime = Instant
   .atZone(ZoneId.systemDefault())
   .toLocalDateTime()
 
-private fun String.asUUID(): UUID = java.util.UUID.fromString(this)
+private fun String.asUUID(): UUID = fromString(this)
 
 internal class RawBlock(
   private val value1: String,
   private val value2: Long,
-  private val value3: String
+  private val value3: String,
+  private val value4: String
 ) : Block {
   override val uuid: UUID get() = value1.asUUID()
-  override val time: LocalDateTime get() = value2.asLocalDateTime()
-  override val statement: Statement get() = statement(value3)!!
+  override val locktime: LocalDateTime get() = value2.asLocalDateTime()
+  override val input: Statement get() = statement(value3)!!
+  override val output: Statement get() = statement(value4)!!
 }
 
-internal class DbBlock(private val db: RxDb, private val id: Long) : Block {
-  override val uuid: UUID
-    get() =
-      override
-  val time: LocalDateTime
-    get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-  override val statement: Statement
+internal class DbBlock(private val source: DataSource, private val id: Long) : Block {
+  private val db: Database = Database.fromDataSource(source)
+
+  override val uuid: UUID get() = db
+      .select("")
+      .getAs(String::class.java)
+      .map(::fromString)
+      .toBlocking()
+      .first()
+
+  override val locktime: LocalDateTime
     get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 
+  override val input: Statement
+    get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+
+  override val output: Statement
+    get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 }
 
 /*

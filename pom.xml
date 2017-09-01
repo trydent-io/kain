@@ -73,11 +73,6 @@
       <artifactId>rxjava-jdbc</artifactId>
       <version>${rxjava.jdbc.version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.jcabi</groupId>
-      <artifactId>jcabi-jdbc</artifactId>
-      <version>${jcabi.jdbc.version}</version>
-    </dependency>
 
     <!-- runtime -->
     <dependency>

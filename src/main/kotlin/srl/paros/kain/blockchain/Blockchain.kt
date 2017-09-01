@@ -1,29 +1,44 @@
 package srl.paros.kain.blockchain
 
-import srl.paros.kain.db.DbSession
+import com.github.davidmoten.rx.jdbc.Database
+import rx.Observable
+import java.time.LocalDateTime
+import java.time.ZoneOffset.UTC
 import java.util.UUID
+import javax.sql.DataSource
 
 interface Blocks : Iterable<Block> {
-  fun push(block: Block): Blocks
-  fun pop(uuid: UUID)
+  fun push(uuid: UUID, locktime: LocalDateTime, input: Statement, output: Statement): Int
+  fun pop(uuid: UUID): Boolean
+  fun observe(): Observable<Block>
 }
 
-internal class DbBlocks(private val db: DbSession) : Blocks {
-  override fun pop(uuid: UUID) = db.jdbc()
-    .sql("delete from blocks where uuid = ?")
-    .set(uuid.toString())
-    .execute()
-    .commit()
+class DbBlocks(private val source: DataSource) : Blocks {
+  private val db: Database = Database.fromDataSource(source)
 
-  override fun push(block: Block): Blocks {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-  }
+  override fun pop(uuid: UUID): Boolean = db
+    .select("delete from blocks where uuid = :uuid")
+    .parameter("uuid", uuid.toString())
+    .count()
+    .exists { it == 1 }
+    .toBlocking()
+    .first()
 
-  override fun iterator(): Iterator<Block> = db.jdbc()
-    .sql("select uuid, timestamp, statement from blocks order by timestamp")
-    .select { rs, _ ->
-      val bs = mutableListOf<Block>()
-      while (rs.next()) bs.add(RawBlock(rs.getString(0), rs.getLong(1), rs.getString(2)))
-      bs.iterator()
-    }
+  override fun push(uuid: UUID, locktime: LocalDateTime, input: Statement, output: Statement): Int = db
+    .update("insert into blocks(uuid, locktime, input, output) values(:uuid, :locktime, :input, :output)")
+    .parameter("uuid", uuid.toString())
+    .parameter("locktime", locktime.toEpochSecond(UTC))
+    .parameter("input", input.value)
+    .parameter("output", output.value)
+    .returnGeneratedKeys()
+    .getAs(Int::class.java)
+    .toBlocking()
+    .first()
+
+  override fun observe(): Observable<Block> = db
+    .select("select uuid, locktime, input, output from blocks order by uuid")
+    .autoMap(RawBlock::class.java)
+    .cast(Block::class.java)
+
+  override fun iterator(): Iterator<Block> = observe() .toBlocking().iterator
 }
