@@ -1,38 +1,35 @@
 package srl.paros.kain.http
 
+import io.undertow.Handlers
 import io.undertow.Undertow
 import io.undertow.util.Headers
-import srl.paros.kain.Host
-import srl.paros.kain.HttpPort
-import java.util.concurrent.atomic.AtomicReference
+import io.undertow.util.PathTemplateMatch
 
-interface HttpServer {
-  fun start()
-  fun stop()
+interface Route {
+  val value: String
 }
 
-internal class HttpServerImpl(
-  private val host: Host,
-  private val port: HttpPort
-) : HttpServer {
-  private val ref: AtomicReference<Undertow> = AtomicReference()
+interface Request
+interface Response
 
-  override fun start() {
-    ref.set(Undertow.builder()
-      .addHttpListener(port.value, host.value)
-      .setHandler {
+interface Endpoint {
+  val route: Route
+  fun exchange(req: Request): Response
+  fun exchange(req: Request, res: Response): Response
+}
+
+class RestEndpoint
+
+val undertow = Undertow.builder()
+  .addHttpListener(8080, "127.0.0.1")
+  .setHandler { _ ->
+    Handlers.pathTemplate()
+      .add("/item/{itemId}", {
         with(it) {
-          responseHeaders.put(Headers.CONTENT_TYPE, "text/plain")
-          responseSender.send("Hello World")
+          responseHeaders.put(Headers.CONTENT_TYPE, "application/json")
+          getAttachment(PathTemplateMatch.ATTACHMENT_KEY).parameters["itemId"]
+          queryParameters["itemId"]?.first
         }
-      }
-      .build())
-    ref.get().start()
+      })
   }
-
-  override fun stop() {
-    ref.get()?.stop()
-  }
-}
-
-fun httpServer(host: Host, httpPort: HttpPort): HttpServer = HttpServerImpl(host, httpPort)
+  .build()
