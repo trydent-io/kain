@@ -6,11 +6,9 @@ import kotlin.test.assertNotNull
 private const val url = "test"
 
 class DbTest {
-  private val db = h2InFile()
+  private val db = CachedDbs.H2_FILE.db
 
   @Test
-  fun when_source_then_not_null() = assertNotNull(db.pool(url))
+  fun when_open_then_not_null() = assertNotNull(db.open("test.db"))
 
-  @Test
-  fun when_connect_then_not_null() = assertNotNull(db.poolRx(url))
 }

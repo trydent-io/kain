@@ -1,21 +1,9 @@
 package srl.paros.kain
 
-import com.jayway.jsonpath.DocumentContext
-import com.jayway.jsonpath.JsonPath.parse
-import org.jooby.Mutant
-import org.jooby.WebSocket
-import srl.paros.kain.blockchain.Blockchain
-
-
-interface Demand {
-  enum class Type { FULL, LAST }
-
-  val type: Type
-  val
-}
 
 private const val jpath = "$['demand']"
 
+/*
 internal class FullDemand : Demand
 internal class LastDemand : Demand
 
@@ -70,3 +58,4 @@ internal class JsonDemand(message: String) : Demand {
       .let { true }
   }
 }
+*/

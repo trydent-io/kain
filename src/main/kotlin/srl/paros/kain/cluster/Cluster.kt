@@ -1,4 +1,4 @@
-package srl.paros.kain
+package srl.paros.kain.cluster
 
 interface Cluster
 

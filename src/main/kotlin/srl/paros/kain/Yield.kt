@@ -1,9 +1,6 @@
 package srl.paros.kain
 
-import org.jooby.Response
-import org.jooby.WebSocket
-import srl.paros.kain.blockchain.Block
-import srl.paros.kain.blockchain.Blockchain
+/*
 
 interface Yield {
   enum class Type { Merge }
@@ -27,3 +24,4 @@ private class PeerYield(type: Yield.Type, blocks: Array<Block>) : Yield {
 fun yieldFull(b: Blockchain): Yield = PeerYield(Yield.Type.Merge, b.toList().toTypedArray())
 fun yieldLast(b: Blockchain): Yield = PeerYield(Yield.Type.Merge, arrayOf(b.last))
 
+*/

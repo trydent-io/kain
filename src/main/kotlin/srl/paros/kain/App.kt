@@ -203,31 +203,11 @@
  */
 package srl.paros.kain
 
-import org.slf4j.LoggerFactory
-import spark.servlet.SparkApplication
-import srl.paros.kain.core.settings
-import srl.paros.kain.db.dbSettings
-import srl.paros.kain.db.rxDbSource
-
-
-val log = LoggerFactory.getLogger(App::class.java)
-
-class App(cluster: Cluster) : SparkApplication {
-  private val cluster = cluster
-
-  override fun init() {
-
-  }
-}
+import srl.paros.kain.http.DefaultHttpServer
+import srl.paros.kain.http.LOCALHOST
+import srl.paros.kain.http.Port
 
 fun main(args: Array<String>) {
-  val name = settings()
-    .convertIn(::dbSettings)
-    .dbSource()
-    .convertIn(::rxDbSource)
-    .databaseAsync()
-    .select("select nome from persone")
-    .getAs(String::class.java)
-    .toBlocking()
-    .first()
+  val httpServer = DefaultHttpServer(LOCALHOST, Port(8080))
+  httpServer.get().start()
 }

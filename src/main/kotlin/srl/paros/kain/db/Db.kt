@@ -33,9 +33,9 @@ class RawDb(urlPattern: String, driver: String) : Db {
   }.let(::HikariDataSource)
 }
 
-enum class CachedDb(val db: Db) {
-  H2_FILE(h2InFile())
+enum class CachedDbs(val db: Db) {
+  H2_FILE(H2InFile())
 }
 
 fun <T> db(urlPattern: String, driver: Class<T>): Db where T : Driver = RawDb(urlPattern, driver.name)
-fun h2InFile(): Db = db("jdbc:h2:file:%s", org.h2.Driver::class.java)
+fun H2InFile(): Db = db("jdbc:h2:file:%s", org.h2.Driver::class.java)
